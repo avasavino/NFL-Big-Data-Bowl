@@ -22,7 +22,7 @@ This log records what each step does, what I did, what I found, what it means, a
 - **Step 1 – Exploring the data** (`01_explore.R`): Complete.
 - **Step 2 – Loading the slant drill** (`A_01_load_slant.R`): Complete.
 - **Step 3 – Scoring each receiver's cut** (`A_02_slant_metrics.R`): Complete. The handoff file for Person B is saved but still needs to be pushed to GitHub.
-- **Step 4 – Comparing cut force to stopwatch times** (`A_03_compare_stopwatch.R`): In progress.
+- **Step 4 – Comparing cut force to stopwatch times** (`A_03_compare_stopwatch.R`): Complete (Nov 16). Cut force is unrelated to the 40-yard dash.
 - **Next – Joining with Person B's NFL data**: Not started. Person B's file (`nfl_slant_separation.csv`) is already finished and pushed.
 
 ---
@@ -130,28 +130,31 @@ These problems affected the method and are worth explaining in the paper:
 
 ---
 
-## Step 4: Comparing Cut Force to Stopwatch Times (In Progress)
+## Step 4: Comparing Cut Force to Stopwatch Times
 
 **File:** `scripts/A_03_compare_stopwatch.R`
-**Will create:** `output/A_cutforce_vs_forty.png`
+**Creates:** `output/A_cutforce_vs_forty.png` (scatter plot of cut force against 40-yard dash time)
 
 ### What this step does
 Teams already have stopwatch times from the Combine, like the 40-yard dash, the 3-cone drill and the short shuttle. If cut force simply repeated what those times already show, it wouldn't be useful. This step checks whether cut force measures something new. The competition prompt asks directly where tracking data "adds context" beyond traditional drill times.
 
-### What I'm doing
-Joining my cut force scores to each receiver's stopwatch times, calculating correlations, and making a scatter plot of cut force against 40-yard dash time.
-
-### Early results
-These were checked ahead of time and still need to be confirmed when I run the script:
-
-- Of the 107 receivers, 97 have a 40-yard dash time, but only 33 ran the 3-cone drill and only 38 ran the short shuttle. Most receivers skip the agility drills, while every one of them ran the slant, so tracking data can fill a gap.
-- Cut force has almost no relationship with 40-yard dash time (correlation 0.07, p-value 0.47), the 3-cone (0.08) or the shuttle (−0.02).
-
-### What it means
-If confirmed, cut force captures a skill that the stopwatch drills don't, which would support the main argument that tracking data adds new information. However, being unrelated to the 40 is only valuable if cut force also predicts NFL performance. A random number would also be unrelated to the 40. The next step, joining with Person B's NFL data, will answer that.
+### What I did
+I joined my cut force scores to each receiver's official stopwatch times from the Combine results file (40-yard dash, 3-cone drill and short shuttle), matching on player ID. I counted how many receivers had each time, ran a correlation test between cut force and 40-yard dash time, and made a scatter plot with one dot per receiver and a best-fit straight line.
 
 ### What I found
-*(To fill in after running.)*
+**Not every receiver has stopwatch times.** Of the 107 receivers, 97 ran the 40-yard dash, but only 33 ran the 3-cone drill and only 38 ran the short shuttle. Most receivers skip the agility drills. Every one of them ran the slant, though, so tracking data gives us an agility-type measure for players who have no agility time at all.
+
+**Cut force has almost no relationship with 40-yard dash time.** The correlation is 0.07 (on a scale where 0 means no relationship and 1 means a perfect match), with a p-value of 0.47, meaning a link this small could easily be chance. The 95% confidence range runs from −0.13 to 0.27, so any real relationship is weak at most. In the scatter plot, the best-fit line is nearly flat and the dots are spread widely. Receivers with fast and slow 40 times both show the full range of cut force, from about 2.7 to 5.7.
+
+Cut force is also unrelated to the 3-cone drill (correlation 0.08, 33 receivers) and the short shuttle (−0.02, 38 receivers). These two are based on small groups, so they're less certain than the 40-yard dash result.
+
+### What it means
+Cut force captures something the stopwatch doesn't. A receiver's straight-line speed tells you almost nothing about how hard he can cut while running a route. This supports the main argument of the project: Combine tracking data adds new information that traditional drill times miss, which is exactly what the competition prompt asks about.
+
+There is one important caution for the paper. Being unrelated to the 40 is only valuable if cut force **also predicts NFL performance**. A completely random number would also be unrelated to the 40. The next step, joining with Person B's NFL separation data, answers whether cut force is a real skill or just noise.
+
+### Possible figure for the paper
+The scatter plot (`A_cutforce_vs_forty.png`) is a good candidate for the writeup, since it makes the "the stopwatch misses this" point at a glance. Before using it in the final paper, it should be cleaned up: a lighter theme, the correlation printed on the chart, and maybe a few standout receivers labeled.
 
 ---
 
