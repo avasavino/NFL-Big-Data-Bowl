@@ -25,6 +25,9 @@ This log records what each step does, what I did, what I found, what it means, a
 - **Step 4 – Comparing cut force to stopwatch times** (`A_03_compare_stopwatch.R`): Complete (Nov 16). Cut force is unrelated to the 40-yard dash.
 - **New direction (Nov 16) – Defensive linemen and "bend"**: The project switched from receivers to measuring bend for pass rushers (see "The New Direction" below). Person B has been sent their new tasks.
 - **Step 5 – Measuring bend on the run the hoop drill** (`A_05_dl_bend.R`): Complete (Nov 16). Handoff file `combine_dl_bend.csv` saved for 109 defensive linemen.
+- **Step 6 – Is bend just being small and fast?** (`A_06_bend_vs_stopwatch.R`): Complete (Nov 17). Bend overlaps with weight and speed, but they explain only 23% of it.
+- **Step 7 – Joining step and main model** (`C_join_and_model.R`): Complete (Nov 18). **Main result:** bend predicts NFL pressure rate (p = 0.011), about as strongly as draft position. It passes the backup checks (shrunk pressure rate, every draft class, both roles pointing the same way), and the main chart is made.
+- **Waiting on Person B:** the role-adjusted in-game bend (requested Nov 17).
 - **Earlier plan – Joining with Person B's receiver data**: Not started, replaced by the new direction. Person B's file (`nfl_slant_separation.csv`) is already finished and pushed. An early look (Nov 16, below) found no link between cut force and NFL slant separation, plus a draft-year problem that has to be fixed first.
 
 ---
@@ -343,6 +346,136 @@ The figure-8 path picture (`A_hoop_path.png`) is a strong candidate for introduc
 
 ---
 
+## Step 6: Is Bend Just Being Small and Fast?
+
+**File:** `scripts/A_06_bend_vs_stopwatch.R`
+**Creates:** `output/A_bend_vs_weight.png` (scatter plot of bend against body weight)
+
+### What this step does
+The first question an NFL analyst will ask is: "Isn't bend just the lighter, faster guys?" This step checks how much bend overlaps with the traditional Combine measures teams already have. If bend were nothing more than weight and speed, it wouldn't add anything new.
+
+### What I did
+I joined each lineman's bend score to his traditional Combine results: body weight, 40-yard dash, 10-yard split (burst over the first 10 yards), 3-cone drill and the NFL's own athleticism score (0–100). I counted how many linemen had each measure, calculated correlations, tested the two strongest ones, and used a regression (`lm()`) to see how much of bend weight, the 40 and athleticism can explain together. I also made a scatter plot of bend against weight.
+
+### What I found
+**Many linemen skip the stopwatch drills, but all of them have bend.** All 109 have a weight and an athleticism score, but only 86 ran the 40 and 10-yard split, and only 40 ran the 3-cone. Every one of them ran the hoop drill.
+
+**Bend does overlap with size and speed:**
+
+| Traditional measure | Correlation with bend | Meaning |
+|---|---|---|
+| Body weight | −0.43 | Heavier linemen bend less |
+| 40-yard dash | −0.48 | Faster linemen (lower times) bend more |
+| 10-yard split | −0.43 | Linemen with a quicker start bend more |
+| 3-cone drill | −0.36 | Linemen with better agility times bend more (40 players only) |
+| NFL athleticism score | 0.16 | Barely related |
+
+The weight and 40 links are clearly real, not chance (p-values about 0.000002).
+
+**But size and speed explain only part of bend.** Together, weight, 40 time and athleticism explain **23%** of the differences in bend. The other **77%** is something the scale and stopwatch don't capture. In the scatter plot, the best-fit line slopes down, but the dots are spread widely: linemen of the same weight have very different bend.
+
+### What it means
+This is different from the receivers, where cut force was unrelated to the 40 (Step 4). For linemen, bend partly reflects being lighter and faster, which makes sense, since a lighter body is easier to turn. But most of bend is a separate skill, likely body control, lean and footwork while running a curve.
+
+This matters for the main result in two ways:
+1. It confirms that **weight must be accounted for** in the pressure model, which it already is. Otherwise bend could just be standing in for "lighter player."
+2. It shows there is **plenty of room for bend to add new information.** Since 77% of bend isn't explained by traditional measures, it can predict pressure beyond them, and the earlier checks suggest it does (beyond weight and beyond the athleticism score).
+
+### Possible figure for the paper
+The bend vs. weight scatter plot (`A_bend_vs_weight.png`) shows the "related but not the same" point clearly. For the final paper, it could be cleaned up by fixing the axis label typo, lightening the theme, printing the 23% figure on the chart, and possibly coloring edge rushers and interior linemen differently.
+
+---
+
+## Step 7: Joining Bend and Pressure (the Main Result)
+
+**File:** `scripts/C_join_and_model.R` (shared file: Person A types, Person B reviews)
+
+### What this step does
+This is where the two halves of the project meet. It joins my Combine bend scores with Person B's NFL pressure numbers and answers the main research question: **does bend at the Combine predict how often a defensive lineman pressures the quarterback in the NFL, beyond what teams already know?**
+
+### What I did
+1. Loaded four files: my bend scores, Person B's pressure results, body weight from the Combine results, and draft pick from the player list.
+2. Joined them by player ID. 90 linemen have both a bend score and at least one NFL pass rush. I kept the **63 with at least 100 regular-season pass rushes**, so each player's pressure rate is based on enough plays to trust.
+3. Gave the 5 undrafted players a draft pick of 260 (after the last pick), so they stay in the analysis instead of being dropped.
+4. Converted draft pick to its logarithm, so that the gap between pick 1 and pick 10 counts for more than the gap between pick 200 and pick 210, which matches how much draft position really matters.
+5. Fit a regression model: pressure rate explained by bend (graded within draft year), plus draft year, draft pick, body weight and edge share. Including those other factors means bend only gets credit for what it adds **beyond** them.
+
+### What I found
+
+| Factor | Effect on pressure rate | p-value | Meaning |
+|---|---|---|---|
+| **Bend (one step above class average)** | **+0.76 percentage points** | **0.011** | More bend → more pressure |
+| Draft pick (log scale) | −0.91 points per log unit | 0.010 | Earlier picks get more pressure |
+| Drafted in 2025 (vs 2023) | −1.08 points | 0.12 | Rookies a bit lower, not significant |
+| Drafted in 2024 (vs 2023) | +0.30 points | 0.65 | No real difference |
+| Body weight (per pound) | −0.02 points | 0.29 | Not significant once bend and pick are included |
+| Edge share | −0.50 points | 0.71 | Not significant once bend, pick and weight are included |
+
+- **Bend is a real predictor of NFL pressure.** Each step above his draft class average in bend goes with 0.76 more percentage points of pressure rate. The average pressure rate in this group is 7.0%, so one step of bend is worth about **11% more pressures**.
+- **Bend is about as strong a predictor as draft position.** Both have p-values around 0.01. Draft position reflects everything scouts know about a player, so this is a strong result for a single drill measurement.
+- **Weight and edge share stop mattering once bend is included.** On their own, lighter players and edge rushers get more pressure. But in the full model their effects shrink to nearly zero. This suggests part of why lighter players and edge rushers get more pressure is that they tend to bend better.
+- **The model explains 36% of the differences in pressure rate** between linemen (R² = 0.36). The model as a whole is clearly not chance (p = 0.0003).
+
+### Backup checks
+- **Person B's shrunk pressure rate.** Using pressure rates pulled toward the average for players with fewer rushes, bend still predicts pressure (+0.49 points per step, p = 0.013).
+- **Every draft class.** Bend and pressure rate are positively related in all three classes: 0.43 in 2023 (21 linemen), 0.37 in 2024 (22) and 0.47 in 2025 (20). The result isn't driven by one lucky year.
+- **Edge rushers vs. interior linemen.** I called a lineman "Edge" if he lined up on the edge for at least half his rushes (33 players) and "Interior" otherwise (30 players), then ran the model separately on each group. Bend points the same way in both. It's significant for interior linemen (+0.93 points per step, p = 0.017) but not for edge rushers (+0.59 points, p = 0.25). With only about 30 players per group, each split is much less certain than the full model, so this supports the main result rather than replacing it. It's also a possible insight: bend may separate interior linemen more because nearly all edge rushers already bend well.
+
+### The main chart: pressure rate by bend group
+To show the result in a way a coach understands at a glance, I split the 63 linemen into three equal groups of 21 by bend and compared their average NFL pressure rates (`output/C_pressure_by_bend_group.png`):
+
+| Bend group | Linemen | Pressure rate |
+|---|---|---|
+| Low bend | 21 | 6.5% |
+| Middle bend | 21 | 6.0% |
+| High bend | 21 | 8.6% |
+
+The pattern isn't a smooth staircase: the low and middle groups are about the same, and the jump comes in the top third. In plain words, **the best benders stand out**. High-bend linemen pressure the quarterback about a third more often than the rest (8.6% vs. about 6.2%). This chart shows the raw pattern only and doesn't account for draft pick, weight or role. The regression model above is the actual evidence.
+
+### What it means
+This is the main finding of the project, now confirmed with the official data from both halves: **Combine bend predicts NFL pressure beyond draft position, body weight and edge vs. interior role.** It gives teams a new, objective number for a trait scouts have only been able to judge by eye.
+
+---
+
+## Person B's Results Arrive (Nov 17)
+
+Person B pushed two files: `output/nfl_dl_pressure.csv` (pressure rate, sack rate and edge share for 98 defensive linemen) and `output/nfl_dl_game_bend.csv` (bend measured on real NFL pass rushes). Claude checked both independently.
+
+### Pressure file: verified
+All of Person B's sanity checks match: 98 linemen with regular-season pass rushes, 69 with at least 100, 33,513 total rushes and an overall pressure rate of 8.1%. 63 of those 69 also ran the run the hoop drill, so the final analysis has 63 linemen.
+
+### The main result still holds with the official file
+Using Person B's pressure file in place of the quick search version, Combine bend still predicts NFL pressure rate after accounting for draft year, draft pick, body weight and edge share (p = 0.011). Using Person B's shrunk pressure rate, which pulls players with fewer rushes toward the average, gives the same answer (p = 0.013).
+
+### In-game bend: mostly a role effect, as Person B warned
+Person B's caution is correct. In-game bend is mostly about **where a player lines up**: edge rushers run around blockers, so their in-game bend is naturally higher (correlation with edge share 0.89). Combine bend and in-game bend look related at first (0.41), but once edge share is accounted for, the link nearly disappears (partial correlation about 0.12, p = 0.34). So the paper should **not** claim that "Combine bend shows up as bend on Sundays." Any analysis involving bend must account for edge share.
+
+### Two new observations (interesting, but from small groups)
+- **In-game bend predicts pressure** beyond role, weight and draft position (p = 0.04). This supports the basic idea that bending in real games helps a rusher get to the quarterback.
+- **The Combine bend link looks stronger for interior linemen than for edge rushers.** Among 30 interior linemen it's significant (p = 0.017). Among 33 edge rushers it points the same way but isn't significant (p = 0.25). This is surprising, since bend is usually discussed for edge rushers. A possible reason: edge rushers all bend a lot, while among interior linemen, bend separates the agile ones from the rest. With only about 30 players per group, this needs care and shouldn't be a headline claim.
+
+### What it means
+The core finding survives with the official data: **Combine bend predicts NFL pressure beyond draft position, size and role.** The supporting "drill translation" story is weaker than hoped and should be presented carefully or left out. Edge share is now a required control in every model.
+
+---
+
+## Handling the Edge vs. Interior Problem (Nov 17)
+
+Edge rushers run around blockers, so they naturally bend more in games and also get more pressure. This section records how the project deals with that.
+
+### Combine bend is not affected by NFL role
+Every lineman runs the same figure-8 at the Combine, regardless of where he later plays. So the role problem only affects **in-game** bend. For the main result (Combine bend → pressure), the concern is narrower: edge rushers tend to both bend better at the Combine and get more pressure, so bend could be secretly standing in for "he's an edge rusher."
+
+### Three ways to handle it
+1. **Account for role in the model (the main approach, already in place).** Edge share is included in every model, so the question becomes "among players with the same mix of edge and interior snaps, does more bend still mean more pressure?" It's like asking whether a basketball center is tall *for a center*. The answer is yes (p = 0.011).
+2. **Split into edge and interior groups (backup check).** Analyzing each role separately avoids comparing across roles at all. Interior linemen (30): p = 0.017. Edge rushers (33): same direction, p = 0.25. The groups are small, so this supports the main result rather than replacing it.
+3. **Role-adjusted in-game bend, play by play (suggested to Person B).** For each NFL pass rush, compare the player's bend to the average bend for that alignment (edge snaps vs. the edge average, interior snaps vs. the interior average), then average those differences across his rushes. This gives "in-game bend above expected for his role," the same curve-grading idea as `bend_z`, applied to role. It's the cleanest way to test whether Combine bend shows up in games.
+
+### A subtle point for the paper: the result is probably conservative
+Teams often put a player on the edge *because* he can bend. If so, edge share partly reflects bend itself, and accounting for it removes some of bend's real effect along with the role effect. That means the reported effect of bend is likely an **underestimate**: the true effect may be somewhat larger. Explaining this in the paper shows a careful understanding of the data and turns a possible criticism into a strength.
+
+---
+
 ## Key Decisions
 
 **Studying wide receivers on the slant route (Nov 11).** Receivers have the best NFL performance measure in the data, all 107 ran the slant drill, and the slant is easy for coaches to picture.
@@ -363,6 +496,8 @@ The figure-8 path picture (`A_hoop_path.png`) is a strong candidate for introduc
 
 **Switching to defensive linemen and "bend" → pressure rate (Nov 16).** A fair search of about 700 practice-skill × game-result combinations across receivers, offensive linemen and defensive linemen found that receiver ideas didn't hold up, while bend (cut force on the run the hoop drill) predicted NFL pressure rate after accounting for draft year, draft pick, body weight, edge vs. interior role and NFL athleticism score. It matches the project's original shape (a practice skill predicting a different game result) and reuses the cut force method. The receiver work stays in the paper as the story of how we got here and as evidence that cut force is a sound measurement.
 
+**Edge share in every model, plus a role-adjusted in-game bend (Nov 17).** Because edge rushers naturally bend more and get more pressure, edge share is a required control in every model, and edge vs. interior split results are reported as a backup check. Person B was asked to build a play-by-play, role-adjusted version of in-game bend.
+
 **Plan B: adding other route types (Nov 11).** Because single slants are so noisy, the final result might come out weak. If it does, we can add other NFL routes where receivers make sharp cuts (in, out and hitch routes) to get more plays per receiver.
 
 ---
@@ -374,8 +509,9 @@ The figure-8 path picture (`A_hoop_path.png`) is a strong candidate for introduc
 - Which direction should the project take from here? The leading option (Nov 16): use **yards per route run** as the NFL performance measure and **speed through the cut** as the main Combine measure, with cut force kept as the tool that finds the cut, and in-game cut force as a supporting "drill translation" section. Needs Person B's agreement.
 - Does the speed-through-the-cut result hold up under careful checks (each draft class separately, without outliers, with a proper model)? The fair search (Nov 16) suggests it's weak.
 - ~~Should the project switch to defensive linemen and "bend"?~~ Decided Nov 16: yes.
-- Does Combine bend show up as bend in real NFL pass rushes? (Person B's in-game bend file will answer this.)
-- Does the bend result hold once Person A's careful version and Person B's pressure file replace the quick search versions?
+- ~~Does Combine bend show up as bend in real NFL pass rushes?~~ Answered Nov 17: only weakly, once edge vs. interior role is accounted for (partial correlation about 0.12). Don't oversell it.
+- ~~Does the bend result hold with the official files?~~ Answered Nov 17: yes (p = 0.011).
+- Is the stronger link for interior linemen real, or just a small-group fluke? Worth one careful look in the joining step, but not a headline claim.
 - Should burst or turn rate be included alongside cut force in the final model, or is cut force enough by itself?
 - If the slant result is weak, do we move to Plan B?
 - How should the 1.5 yards-per-second noise threshold be explained or tested in the paper?
