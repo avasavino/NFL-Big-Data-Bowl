@@ -27,7 +27,8 @@ This log records what each step does, what I did, what I found, what it means, a
 - **Step 5 – Measuring bend on the run the hoop drill** (`A_05_dl_bend.R`): Complete (Nov 16). Handoff file `combine_dl_bend.csv` saved for 109 defensive linemen.
 - **Step 6 – Is bend just being small and fast?** (`A_06_bend_vs_stopwatch.R`): Complete (Nov 17). Bend overlaps with weight and speed, but they explain only 23% of it.
 - **Step 7 – Joining step and main model** (`C_join_and_model.R`): Complete (Nov 18). **Main result:** bend predicts NFL pressure rate (p = 0.011), about as strongly as draft position. It passes the backup checks (shrunk pressure rate, every draft class, both roles pointing the same way), and the main chart is made.
-- **Waiting on Person B:** the role-adjusted in-game bend (requested Nov 17).
+- **Person B's role-adjusted in-game bend:** Complete (pushed Nov 18). Results below under "Role-Adjusted In-Game Bend."
+- **Step 8 – Hidden talent examples** (`A_07_hidden_talent.R`): Complete (Nov 18). Gem and bust tables plus the hidden talent chart. Bend predicts who beats their draft slot (correlation 0.43).
 - **Earlier plan – Joining with Person B's receiver data**: Not started, replaced by the new direction. Person B's file (`nfl_slant_separation.csv`) is already finished and pushed. An early look (Nov 16, below) found no link between cut force and NFL slant separation, plus a draft-year problem that has to be fixed first.
 
 ---
@@ -473,6 +474,106 @@ Every lineman runs the same figure-8 at the Combine, regardless of where he late
 
 ### A subtle point for the paper: the result is probably conservative
 Teams often put a player on the edge *because* he can bend. If so, edge share partly reflects bend itself, and accounting for it removes some of bend's real effect along with the role effect. That means the reported effect of bend is likely an **underestimate**: the true effect may be somewhat larger. Explaining this in the paper shows a careful understanding of the data and turns a possible criticism into a strength.
+
+---
+
+## Step 8: Hidden Talent and Possible Busts
+
+**File:** `scripts/A_07_hidden_talent.R`
+
+### What this step does
+The competition asks for insights that help teams **find hidden talent and avoid costly draft busts**. This step puts real names to the main result: it looks for linemen whose bend suggested they were better (or worse) than where they were drafted, and checks how they actually played.
+
+### What I did
+1. Joined bend, NFL pressure and draft information for the 63 linemen with at least 100 regular-season pass rushes. Undrafted players were given pick 260.
+2. Built a "draft only" model that predicts each player's pressure rate from **just his draft pick and draft year**. This gives his **expected** pressure: what you'd guess knowing only where he was drafted.
+3. Calculated **pressure over expected** = actual pressure rate − expected pressure rate. Positive means he beat his draft slot; negative means he fell short.
+4. Tested whether bend predicts pressure over expected.
+5. Listed two groups:
+   - **Possible hidden gems:** above-average bend (`bend_z` ≥ 0.5) but drafted at pick 100 or later (round 4 or later, or undrafted).
+   - **Possible busts:** below-average bend (`bend_z` ≤ −0.5) but drafted in the first 64 picks (rounds 1–2).
+
+### What I found
+**Bend predicts who beats their draft slot.** The correlation between bend and pressure over expected is **0.43**: linemen with more bend tend to outperform where they were drafted.
+
+**Possible hidden gems** (high bend, drafted late), sorted by pressure rate:
+
+| Player | Draft | Role | Bend (z) | Pass rushes | Pressure rate | Expected from draft slot |
+|---|---|---|---|---|---|---|
+| Cedric Johnson | 2024, round 6 (#214) | Edge | +1.17 | 217 | **12.9%** | 6.9% |
+| Javon Solomon | 2024, round 5 (#168) | Edge | +1.45 | 213 | **12.2%** | 7.1% |
+| Jack Sawyer | 2025, round 4 (#123) | Edge | +0.94 | 178 | **9.6%** | 5.7% |
+| Adetomiwa Adebawore | 2023, round 4 (#110) | Interior | +2.64 | 511 | **8.6%** | 7.2% |
+| Austin Booker | 2024, round 5 (#144) | Edge | +1.31 | 540 | **8.0%** | 7.2% |
+| Warren Brinson | 2025, round 6 (#198) | Interior | +1.59 | 173 | **6.9%** | 5.3% |
+| Tyrion Ingram-Dawkins | 2025, round 5 (#139) | Edge | +1.30 | 113 | 5.3% | 5.6% |
+| Javontae Jean-Baptiste | 2024, round 7 (#222) | Edge | +0.83 | 180 | 5.0% | 6.8% |
+| Jaylen Harrell | 2024, round 7 (#252) | Edge | +0.73 | 461 | 4.6% | 6.7% |
+
+**6 of the 9** beat their draft-slot expectation, several by a lot. Cedric Johnson and Javon Solomon, both day-3 picks, pressured the quarterback almost twice as often as their draft position predicted. Adetomiwa Adebawore had the **highest bend of any lineman** in the study and outperformed his fourth-round slot over 511 rushes.
+
+**Possible busts** (low bend, drafted early), sorted from lowest pressure:
+
+| Player | Draft | Role | Bend (z) | Pass rushes | Pressure rate | Expected from draft slot |
+|---|---|---|---|---|---|---|
+| Darius Robinson | 2024, round 1 (#27) | Interior | −2.31 | 459 | **2.4%** | 8.7% |
+| Alfred Collins | 2025, round 2 (#43) | Interior | −1.13 | 261 | **3.8%** | 6.6% |
+| T'Vondre Sweat | 2024, round 2 (#38) | Interior | −1.84 | 496 | 7.7% | 8.4% |
+| Keion White | 2023, round 2 (#46) | Edge | −0.93 | 1,181 | 7.7% | 7.9% |
+| Byron Murphy | 2024, round 1 (#16) | Interior | −1.37 | 689 | 9.9% | 9.1% |
+| Will McDonald | 2023, round 1 (#15) | Edge | −0.87 | 1,113 | 10.5% | 8.9% |
+| Jared Verse | 2024, round 1 (#19) | Edge | −0.52 | 1,242 | 11.6% | 9.0% |
+
+**4 of the 7** fell short of their draft-slot expectation. The clearest case is Darius Robinson: a first-round pick with the **lowest bend of any lineman** in the study, who pressured the quarterback only 2.4% of the time, about a quarter of what his draft slot predicted.
+
+### The exceptions
+Bend is a helpful extra clue, not a crystal ball:
+- **3 of the 9 high-bend late picks fell short** of expectation (Ingram-Dawkins slightly; Jean-Baptiste and Harrell more clearly).
+- **3 of the 7 low-bend early picks beat expectation**, including Jared Verse (11.6% pressure) and Will McDonald (10.5%). Pass rushing also depends on power, hand technique, first-step speed and coaching, which bend doesn't capture.
+
+### What it means
+These examples turn the main result into something a front office can act on. Bend flagged several day-3 picks who became productive pass rushers, and it flagged the study's biggest first-round disappointment. The honest framing for the paper: **bend is an extra, objective signal that helps teams spot players the draft may be over- or under-valuing**, especially useful when it disagrees with where a player is projected to go, but it's one tool among several.
+
+### The hidden talent chart
+`output/A_hidden_talent.png` shows all 63 linemen at once: bend across the bottom, and how far each player's pressure rate landed above or below his draft-slot expectation up the side. A dashed line at zero separates players who beat their draft slot from those who fell short, and the trend line slopes clearly upward. Cedric Johnson, Javon Solomon and Jack Sawyer sit high on the right (high bend, beat expectations by 4 to 6 points), while Darius Robinson sits alone at the bottom left (lowest bend, about 6 points below expectation). Jared Verse is labeled as an honest exception: below-average bend, but well above expectation. The chart uses the same colors and shapes as Person B's charts (blue circles for edge, orange triangles for interior) so the paper's figures look like a set.
+
+**Note for the paper:** the "expected" pressure comes from a model fit on these same 63 players, and the gem/bust cutoffs (bend ±0.5, pick 100 and 64) were chosen for illustration. These are examples, not a separate test.
+
+---
+
+## Person B's Adjusted Charts (Nov 18)
+
+Person B added `scripts/B_05_adjusted_chart.R`, which makes two polished versions of the main result:
+
+1. **`output/B_05_adjusted_pressure_vs_bend.png`**: a scatter plot of every lineman's bend against his **adjusted** NFL pressure rate, meaning pressure with the effects of draft year, draft pick, weight and edge share evened out. Each dot is one player (blue circles for edge, orange triangles for interior), with the model's line and a gray band showing its uncertainty. The three highest- and three lowest-bend players are labeled. Title: "More bend at the Combine, more pressure in the NFL" (+0.76 points per step of bend, p = 0.011).
+2. **`output/B_05_adjusted_pressure_by_bend_group.png`**: the same low/middle/high bend bar chart as my Step 7 chart, but using adjusted pressure, with error bars. Adjusted pressure: low bend 6.7%, middle 6.1%, high **8.3%**.
+
+### What it means for the paper
+Person B's charts are better choices for the paper than my raw Step 7 bar chart, because they show the pattern **after** accounting for the factors in the model, so what readers see matches the evidence. They also use a clean, accessible style (circles vs. triangles, so color isn't the only clue). My Step 7 chart stays as a working version. My remaining charts should use the same colors and style so the paper looks consistent.
+
+### Candidate figures for the paper (limit: fewer than 10 figures and tables combined)
+1. The run the hoop figure-8 path (`A_hoop_path.png`), to introduce the drill. Could become two players side by side, high vs. low bend.
+2. Bend vs. weight (`A_bend_vs_weight.png`): "related to size, but only 23%."
+3. Adjusted pressure vs. bend scatter (`B_05_adjusted_pressure_vs_bend.png`): **the main result.**
+4. Adjusted pressure by bend group (`B_05_adjusted_pressure_by_bend_group.png`): the simple version for coaches.
+5. Hidden talent chart (`A_hidden_talent.png`, in progress): bend vs. pressure above draft expectation, with names.
+6. A table of the main model results.
+7. A table of hidden gems and possible busts.
+
+That's 7, leaving room for 1–2 more if needed. The team should agree on the final list.
+
+---
+
+## Role-Adjusted In-Game Bend (Nov 18)
+
+Person B built the play-by-play, role-adjusted version of in-game bend requested on Nov 17. Each NFL pass rush is compared to the average bend for that alignment (edge or interior), and the differences are averaged per player (`game_bend_oe_shrunk` in `output/nfl_dl_game_bend.csv`). Claude checked the results for the 63 linemen in the main analysis.
+
+- **The adjustment removed most, but not all, of the role effect.** The correlation between in-game bend and edge share dropped from 0.89 to 0.36. Players who rush mostly from the edge still bend somewhat more than average even compared only to other edge snaps, possibly because full-time edge rushers are chosen for that role partly for their bend.
+- **Combine bend is only weakly related to in-game bend.** The raw correlation is 0.26 (p = 0.04). Once edge share and weight are accounted for, the link is no longer significant (p = 0.30).
+- **Role-adjusted in-game bend predicts pressure.** Linemen who bend more than expected for their role in real games get more pressure, after accounting for draft year, draft pick, weight and edge share (p = 0.02).
+
+### What it means
+Bending in real games clearly matters for getting to the quarterback, which supports the basic logic of the project. But the Combine drill is only a weak preview of in-game bend once role and size are accounted for. So the paper's main claim stays **Combine bend → NFL pressure**. The in-game part can appear as a short supporting point ("bending in games is linked to pressure, too") with an honest note that the Combine drill doesn't strongly predict in-game bend itself. Possible reasons to mention: the Combine drill has no blocker, and in-game bend depends on the play call and the opponent.
 
 ---
 
