@@ -82,3 +82,46 @@ adjusted_plot <- ggplot(linemen, aes(x = bend_z, y = adjusted_pressure * 100)) +
 
 print(adjusted_plot)  # show the chart
 ggsave("output/B_05_adjusted_pressure_vs_bend.png", adjusted_plot, width = 8, height = 5.5, dpi = 150, bg = "#fcfcfb")  # save it for the paper
+
+bend_groups <- linemen |>  # start from the linemen with adjusted pressure
+  mutate(
+    bend_group = ntile(bend_z, 3),  # split into 3 equal groups by bend: 1 = lowest, 3 = highest
+    bend_group = factor(bend_group, labels = c("Low bend", "Middle bend", "High bend"))  # give the groups names
+  ) |>
+  group_by(bend_group) |>  # one pile per group
+  summarise(
+    players = n(),  # how many linemen are in the group
+    pressure = mean(adjusted_pressure),  # the group's average adjusted pressure rate
+    se = sd(adjusted_pressure) / sqrt(players),  # how uncertain that average is
+    .groups = "drop"  # un-pile the table
+  )
+
+print(bend_groups)  # show the group averages on screen
+
+bar_plot <- ggplot(bend_groups, aes(x = bend_group, y = pressure * 100)) +  # bend group across, adjusted pressure (as a percent) up
+  geom_col(fill = "#2a78d6", width = 0.6) +  # one blue bar per group
+  geom_errorbar(aes(ymin = (pressure - se) * 100, ymax = (pressure + se) * 100), width = 0.15, color = "#0b0b0b", linewidth = 0.5) +  # thin lines showing plus or minus 1 standard error
+  geom_text(aes(y = (pressure + se) * 100, label = sprintf("%.1f%%", pressure * 100)), vjust = -0.8, size = 3.8, color = "#0b0b0b") +  # the percent written above each bar
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +  # bars start at 0, with room on top for the labels
+  labs(
+    title = "The top third in Combine bend gets the most pressure",  # the finding in plain words
+    subtitle = sprintf("%d defensive linemen, %d per group", nrow(linemen), min(bend_groups$players)),  # how many players the bars cover
+    x = "Combine bend, run the hoop drill",  # what the bottom axis means
+    y = "Adjusted NFL pressure rate (%)",  # what the side axis means
+    caption = "Pressure rate adjusted for draft year, draft pick, Combine weight and edge share.\nRegular season, 100+ pass rushes. Error bars = 1 standard error."  # how it was adjusted, split over 2 lines so it fits
+  ) +
+  theme_minimal(base_size = 12) +  # a clean, simple look
+  theme(
+    plot.background = element_rect(fill = "#fcfcfb", color = NA),  # off-white background
+    panel.grid.minor = element_blank(),  # remove the faint in-between grid lines
+    panel.grid.major.x = element_blank(),  # no vertical grid lines behind the bars
+    panel.grid.major.y = element_line(color = "#e8e7e2", linewidth = 0.3),  # keep horizontal grid lines light
+    plot.title = element_text(color = "#0b0b0b", face = "bold"),  # dark bold title
+    plot.subtitle = element_text(color = "#52514e"),  # gray subtitle
+    plot.caption = element_text(color = "#52514e", size = 8, hjust = 0),  # small gray note at the bottom left
+    axis.title = element_text(color = "#52514e"),  # gray axis titles
+    axis.text = element_text(color = "#52514e")  # gray axis labels
+  )
+
+print(bar_plot)  # show the chart
+ggsave("output/B_05_adjusted_pressure_by_bend_group.png", bar_plot, width = 7, height = 5, dpi = 150, bg = "#fcfcfb")  # save it for the paper
